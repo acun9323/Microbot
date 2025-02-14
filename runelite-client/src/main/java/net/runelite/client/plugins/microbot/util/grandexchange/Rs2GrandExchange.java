@@ -32,6 +32,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static net.runelite.client.plugins.microbot.util.Global.*;
 
@@ -185,14 +186,19 @@ public class Rs2GrandExchange {
         }
     }
 
+    public static boolean buyItemAbove5Percent(String itemName, int quantity) {
+        return buyItemAbove5Percent(itemName, quantity, 1);
+    }
+
     /**
      * TODO: test this method
-     * Buys item from the grandexchange 5% above the average priec
+     * Buys item from the grand exchange 5% above the average priec
      * @param itemName
      * @param quantity
+     * @param timesToIncreasePrice the amount to click +5% price increase
      * @return
      */
-    public static boolean buyItemAbove5Percent(String itemName, int quantity) {
+    public static boolean buyItemAbove5Percent(String itemName, int quantity, int timesToIncreasePrice) {
         try {
             if (!isOpen()) {
                 openExchange();
@@ -216,7 +222,7 @@ public class Rs2GrandExchange {
                 sleep(600, 1600);
             }
             setQuantity(quantity);
-            if (buyItemAbove5Percent()) {
+            if (buyItemAbove5Percent(timesToIncreasePrice)) {
                 return true;
             }
 
@@ -227,13 +233,17 @@ public class Rs2GrandExchange {
         return false;
     }
 
-    private static boolean buyItemAbove5Percent() {
+    private static boolean buyItemAbove5Percent(int timesToIncreasePrice) {
         Widget pricePerItemButton5Percent = getPricePerItemButton_Plus5Percent();
 
         if (pricePerItemButton5Percent != null) {
             int basePrice = getItemPrice();
-            Microbot.getMouse().click(pricePerItemButton5Percent.getBounds());
-            sleepUntil(() -> hasOfferPriceChanged(basePrice), 1600);
+
+            IntStream.range(0, timesToIncreasePrice).forEach(i -> {
+                Microbot.getMouse().click(pricePerItemButton5Percent.getBounds());
+                sleepUntil(() -> hasOfferPriceChanged(basePrice), 1600);
+            });
+
             confirm();
             return true;
         } else {
